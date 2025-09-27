@@ -272,3 +272,56 @@
       const rankSorted = rankEntries.sort((a, b) => a.rank - b.rank);
       const top5Ranks = rankSorted.slice(0, 5);
       const bottom5Ranks = rankSorted.slice(-5).reverse();
+            // Helper to build HTML sections for stats
+      function buildSection(title, list, key, type) {
+        const id = `${type}-${key}-${title.replace(/\s+/g,'-')}`;
+        const preview = type === 'player'
+          ? `${list[0].user} (${list[0].team}) - ${key === 'rel' ? list[0].rel : list[0][key]}`
+          : `${list[0][0]} - ${list[0][1].toFixed(1)}`;
+        return `
+          <div class="stat-section">
+            <div class="stat-title" data-target="${id}">
+              ${title}: <span class="highlight">${preview}</span>
+            </div>
+            <div class="stat-list" id="${id}">
+              ${list.map(x => {
+                if (type === 'player') {
+                  return `<div class="player">${x.user} (${x.team}) - ${x[key]}</div>`;
+                } else {
+                  return `<div class="team">${x[0]}: ${x[1].toFixed(1)}</div>`;
+                }
+              }).join('')}
+            </div>
+          </div>`;
+      }
+      loadingBar.textContent = '';
+      stats.innerHTML = `
+        ${buildSection('Top 3 Teams', teamSorted.slice(0,3), 1, 'team')}
+        ${buildSection('Bottom 3 Teams', teamSorted.slice(-3).reverse(), 1, 'team')}
+        ${buildSection('Top 5 Players', playerSorted.slice(0,5).map(([user, val]) => ({ user, ...val })), 'score', 'player')}
+        ${buildSection('Bottom 5 Players', playerSorted.slice(-5).reverse().map(([user, val]) => ({ user, ...val })), 'score', 'player')}
+        ${buildSection('League Median Team Score', [["Median", teamMedian]], 1, 'team')}
+        ${buildSection('League Median Player Score', [["Median", playerMedian]], 1, 'team')}
+        ${buildSection('Top 5 REL (Relative Performance)', relScores.slice(0,5), 'rel', 'player')}
+        ${buildSection('Top 5 User Karma Rank', top5Ranks, 'rank', 'player')}
+        ${buildSection('Bottom 5 User Karma Rank', bottom5Ranks, 'rank', 'player')}
+        <div class="stat-section">
+          <div class="stat-title">
+            Total Players Ranked Today: <span class="highlight">${rankEligibleCount}</span>
+          </div>
+        </div>
+      `;
+      // Add click-to-toggle event on stat titles:
+      stats.addEventListener('click', e => {
+        const title = e.target.closest('.stat-title');
+        if (!title) return;
+        const targetId = title.dataset.target;
+        if (!targetId) return;
+        const listEl = document.getElementById(targetId);
+        if (!listEl) return;
+        listEl.style.display = (listEl.style.display === 'block') ? 'none' : 'block';
+      });
+    });
+  </script>
+</body>
+</html>
